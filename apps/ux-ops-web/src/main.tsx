@@ -35,10 +35,21 @@ function App() {
   const [status, setStatus] = useState<'all' | Status>('all');
   const [lastSync, setLastSync] = useState<string>('');
 
+  const [ocConnected, setOcConnected] = useState<boolean | null>(null);
+
   async function load() {
-    const res = await fetch(`${API_BASE}/api/ux/artifacts`);
+    const [res, oc] = await Promise.all([
+      fetch(`${API_BASE}/api/ux/artifacts`),
+      fetch(`${API_BASE}/api/openclaw/status`).catch(() => null)
+    ]);
+
     const data = await res.json();
     setRows(data.items || []);
+    if (oc) {
+      try { const d = await oc.json(); setOcConnected(Boolean(d?.ok)); } catch { setOcConnected(false); }
+    } else {
+      setOcConnected(false);
+    }
     setLastSync(new Date().toLocaleTimeString());
   }
 
