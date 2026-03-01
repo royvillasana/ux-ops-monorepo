@@ -1,18 +1,24 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-type Status = 'queued' | 'running' | 'success' | 'failed';
-type Row = { id: string; artifact: string; framework: string; status: Status; updatedAt: string };
+type PipelineRow = { id: string; artifact: string; framework: string; status: string; updatedAt: string };
+type OutFile = { name: string; sizeKb: number; updatedAt: string };
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE || 'http://127.0.0.1:8787';
 
 function App() {
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<PipelineRow[]>([]);
+  const [files, setFiles] = useState<OutFile[]>([]);
+  const [logTail, setLogTail] = useState('');
 
   async function load() {
-    const res = await fetch(`${API_BASE}/api/shorts/pipeline`);
-    const data = await res.json();
-    setRows(data.items || []);
+    const [p, o] = await Promise.all([
+      fetch(`${API_BASE}/api/shorts/pipeline`).then((r) => r.json()),
+      fetch(`${API_BASE}/api/shorts/outputs`).then((r) => r.json())
+    ]);
+    setRows(p.items || []);
+    setFiles(o.files || []);
+    setLogTail(o.logTail || '');
   }
 
   useEffect(() => {
@@ -21,32 +27,37 @@ function App() {
     return () => clearInterval(i);
   }, []);
 
-  const counts = useMemo(() => ({
-    queued: rows.filter((r) => r.status === 'queued').length,
-    running: rows.filter((r) => r.status === 'running').length,
-    success: rows.filter((r) => r.status === 'success').length,
-    failed: rows.filter((r) => r.status === 'failed').length
-  }), [rows]);
-
   return (
-    <main style={{ fontFamily: 'Inter,system-ui,sans-serif', padding: 24, maxWidth: 900, margin: '0 auto' }}>
-      <h1>Shorts Ops Console v2</h1>
-      <p style={{ color: '#4b5563' }}>Pipeline operativo de Shorts con control por estado.</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 8, marginBottom: 16 }}>
-        {Object.entries(counts).map(([k, v]) => (
-          <div key={k} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: 10 }}>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>{k}</div>
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{v}</div>
-          </div>
-        ))}
-      </div>
-      <ul style={{ paddingLeft: 18 }}>
-        {rows.map((r) => (
-          <li key={r.id} style={{ marginBottom: 8 }}>
-            <strong>{r.artifact}</strong> — {r.status} — {new Date(r.updatedAt).toLocaleString()}
-          </li>
-        ))}
-      </ul>
+    <main style={{ fontFamily: 'Inter,system-ui,sans-serif', padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+      <h1>Shorts Ops Console v3</h1>
+      <p style={{ color: '#4b5563' }}>Estado del pipeline + archivos de salida reales de <code>shorts-pipeline/outputs</code>.</p>
+
+      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 12 }}>
+          <h3 style={{ marginTop: 0 }}>Pipeline actual</h3>
+          <ul style={{ paddingLeft: 18 }}>
+            {rows.map((r) => (
+              <li key={r.id}><strong>{r.artifact}</strong> — {r.status} — {new Date(r.updatedAt).toLocaleString()}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 12 }}>
+          <h3 style={{ marginTop: 0 }}>Outputs recientes</h3>
+          <ul style={{ paddingLeft: 18, maxHeight: 260, overflow: 'auto' }}>
+            {files.map((f) => (
+              <li key={f.name}>{f.name} — {f.sizeKb} KB — {new Date(f.updatedAt).toLocaleString()}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section style={{ marginTop: 12, border: '1px solid #e5e7eb', borderRadius: 12, padding: 12 }}>
+        <h3 style={{ marginTop: 0 }}>Tail status_6.log</h3>
+        <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, background: '#0b1020', color: '#d1e0ff', padding: 12, borderRadius: 8 }}>
+{logTail || 'Sin log disponible'}
+        </pre>
+      </section>
     </main>
   );
 }
