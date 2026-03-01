@@ -1,0 +1,10 @@
+{
+  "name": "ux-ops-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*", "packages/*", "backend"],
+  "scripts": {
+    "dev": "echo 'Pendiente: levantar apps y backend'",
+    "dev:backend": "node backend/src/index.js"
+  }
+}
