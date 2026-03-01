@@ -1,17 +1,23 @@
 # ux-ops-monorepo
 
-Monorepo para dos frentes:
-- `apps/ux-ops-web` → UX Ops automation (frameworks + artefactos)
-- `apps/shorts-ops-web` → operación de pipeline shorts/video
+Suite inicial para:
+1. UX Ops automation
+2. Shorts Ops
 
-## Importante
-Este repo **NO instala OpenClaw**.
-Se conecta a tu OpenClaw ya corriendo en VPS Hostinger vía Gateway URL.
+## Regla clave
+OpenClaw **no se instala aquí**.
+Este repo se conecta al OpenClaw del VPS Hostinger por `OPENCLAW_GATEWAY_URL` y `OPENCLAW_GATEWAY_TOKEN`.
 
-## Stack
-- Frontend: React + TypeScript + Vite (pendiente scaffold completo)
-- Backend: Fastify (API/orquestación)
-- DB/Auth/Realtime: Supabase
+## Quickstart
+```bash
+npm install --workspaces
+npm run dev:backend
+npm run dev:ux
+npm run dev:shorts
+```
 
-## Variables de entorno
-Copia `.env.example` a `.env` y completa valores.
+Backend:
+- `GET /health`
+- `GET /config`
+- `GET /api/ux/artifacts`
+- `GET /api/shorts/pipeline`
